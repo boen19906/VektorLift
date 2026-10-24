@@ -40,9 +40,10 @@ class BarbellTracker:
 
     # -- public -------------------------------------------------------------
 
-    def track(self, pre, video_path: str | None = None) -> BarbellResult:
+    def track(self, pre, video_path: str | None = None,
+              allow_plate: bool = True) -> BarbellResult:
         proxy = self._proxy(pre)
-        if video_path is None or pre.px_per_m is None:
+        if video_path is None or pre.px_per_m is None or not allow_plate:
             return BarbellResult(
                 pos=proxy, method="proxy", px_per_m_plate=None,
                 plate_r_px=None, pos_px=self._proxy_px(pre),
@@ -123,6 +124,13 @@ class BarbellTracker:
             good[f] = (x, y, r)
         if len(good) < MIN_DETECTION_FRAMES:
             return None
+
+        # the detected circle must actually be plate-sized: a 450 mm plate
+        # under the height-based px/m scale. Rejects lamps, clocks, mats...
+        if pre.px_per_m:
+            r_m = (2 * r_med) / pre.px_per_m
+            if not (0.30 < r_m < 0.60):
+                return None
 
         # interpolate between detections, but blend back to the proxy when
         # the nearest detection is far in time (tracking lost / clip edges)

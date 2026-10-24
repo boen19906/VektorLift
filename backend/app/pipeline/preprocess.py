@@ -156,7 +156,7 @@ class Preprocessor:
             sep_frac = float(np.median(sep) / max(stature_px, 1.0))
         else:
             sep_frac = 0.0
-        camera_side_on = sep_frac < 0.10
+        camera_side_on = sep_frac < 0.15
 
         return PreprocessResult(
             fps=raw.fps,

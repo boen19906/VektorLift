@@ -35,15 +35,21 @@ def run_analysis(
     raw = extract_landmarks(video_path, progress_cb=lambda p: cb(0.05 + 0.5 * p))
     pre = Preprocessor(height_m=meta.get("height_m")).run(raw)
 
-    bar = BarbellTracker(lift_type).track(pre, video_path=video_path)
-    # detected plate scale wins over height-based scale; rescale positions
+    bar = BarbellTracker(lift_type).track(
+        pre, video_path=video_path,
+        allow_plate=meta.get("load_kg", 0.0) > 0,
+    )
+    # detected plate scale wins over height-based scale, but only when it
+    # roughly agrees — a Hough "plate" can be any round object in frame
     if bar.method == "plate" and bar.px_per_m_plate and pre.px_per_m:
-        ratio = pre.px_per_m / bar.px_per_m_plate
-        for name in pre.positions:
-            pre.positions[name] = pre.positions[name] * ratio
-            pre.velocities[name] = pre.velocities[name] * ratio
-        pre.midfoot_x = pre.midfoot_x * ratio
-        pre.px_per_m = bar.px_per_m_plate
+        agree = pre.px_per_m / bar.px_per_m_plate
+        if 0.6 < agree < 1.7:
+            ratio = agree
+            for name in pre.positions:
+                pre.positions[name] = pre.positions[name] * ratio
+                pre.velocities[name] = pre.velocities[name] * ratio
+            pre.midfoot_x = pre.midfoot_x * ratio
+            pre.px_per_m = bar.px_per_m_plate
 
     anthro = build_anthropometry(
         pre,

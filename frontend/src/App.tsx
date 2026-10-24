@@ -128,7 +128,9 @@ export default function App() {
     <div className="min-h-screen px-4 py-10">
       <header className="mx-auto mb-8 max-w-6xl">
         <h1 className="text-3xl font-bold tracking-tight">
-          Vektor<span className="text-orange-500">Lift</span>
+          <button onClick={reset} className="hover:opacity-70" title="Back to upload">
+            Vektor<span className="text-orange-500">Lift</span>
+          </button>
         </h1>
         <p className="mt-1 text-sm text-neutral-500">
           Bar-path kinematics · anthropometric-normalized form checks ·
@@ -184,6 +186,14 @@ export default function App() {
 
       {stage.kind === 'done' && (
         <>
+          <div className="mx-auto mb-4 max-w-3xl">
+            <button
+              onClick={reset}
+              className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+            >
+              ← Analyze another video
+            </button>
+          </div>
           <Report jobId={stage.jobId} report={stage.report} />
           <div className="mx-auto mt-8 max-w-6xl">
             <button

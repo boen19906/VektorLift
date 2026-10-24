@@ -245,8 +245,8 @@ def _rep_metrics(kin: KinematicsResult, pre) -> None:
                 bar_rise = bar[win, 1][-1] - bar[win, 1][0]
                 m["hip_rise_early"] = float(hip_rise)
                 m["bar_rise_early"] = float(bar_rise)
-                m["hip_bar_rise_ratio"] = float(
-                    hip_rise / bar_rise if bar_rise > 1e-4 else np.inf
+                m["hip_bar_rise_ratio"] = (
+                    float(hip_rise / bar_rise) if bar_rise > 1e-4 else None
                 )
             m["heel_lift_max"] = float(np.max(P["heel"][s : e + 1, 1]))
             m["knee_over_toe_max"] = float(
@@ -267,8 +267,8 @@ def _rep_metrics(kin: KinematicsResult, pre) -> None:
             bar_rise = bar[win, 1][-1] - bar[win, 1][0]
             m["hip_rise_early"] = float(hip_rise)
             m["bar_rise_early"] = float(bar_rise)
-            m["hip_bar_rise_ratio"] = float(
-                hip_rise / bar_rise if bar_rise > 1e-4 else np.inf
+            m["hip_bar_rise_ratio"] = (
+                float(hip_rise / bar_rise) if bar_rise > 1e-4 else None
             )
             # back angle: trunk inclination at setup vs through the pull
             m["trunk_incl_setup"] = float(A["trunk_inclination"][rep.start])

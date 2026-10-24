@@ -16,11 +16,14 @@ def _ds(x: np.ndarray, n: int = 400) -> list:
 
 
 def _clean(v):
-    """numpy scalars -> native python types for json."""
+    """numpy scalars -> native python types for json; non-finite -> None.
+
+    Infinity/NaN are not valid JSON — browsers' strict JSON.parse rejects
+    them, which silently breaks result loading."""
     if isinstance(v, np.generic):
         v = v.item()
     if isinstance(v, float):
-        return round(v, 4)
+        return round(v, 4) if np.isfinite(v) else None
     return v
 
 

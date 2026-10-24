@@ -98,7 +98,24 @@ def job_result(job_id: str):
         if state is None:
             raise HTTPException(404, "job not found")
         raise HTTPException(409, f"result not ready (status={state['status']})")
-    return FileResponse(p, media_type="application/json")
+    # read into memory and return plain JSON — a streamed FileResponse can
+    # stall behind the vite dev proxy and hang the frontend's poll loop.
+    # Older reports may contain Infinity/NaN (invalid JSON for browsers);
+    # scrub non-finite floats to null.
+    import json
+    import math
+
+    def scrub(v):
+        if isinstance(v, float) and not math.isfinite(v):
+            return None
+        if isinstance(v, dict):
+            return {k: scrub(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [scrub(x) for x in v]
+        return v
+
+    with open(p) as f:
+        return JSONResponse(scrub(json.load(f)))
 
 
 @app.get("/api/jobs/{job_id}/video")

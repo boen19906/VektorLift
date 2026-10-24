@@ -21,19 +21,19 @@ export interface JobSummary {
 }
 
 export async function getJobs(): Promise<JobSummary[]> {
-  const res = await fetch('/api/jobs')
+  const res = await fetch('/api/jobs', { signal: AbortSignal.timeout(10000) })
   if (!res.ok) throw new Error(`jobs list failed (${res.status})`)
   return res.json()
 }
 
 export async function getJob(id: string): Promise<JobStatus> {
-  const res = await fetch(`/api/jobs/${id}`)
+  const res = await fetch(`/api/jobs/${id}`, { signal: AbortSignal.timeout(10000) })
   if (!res.ok) throw new Error(`status failed (${res.status})`)
   return res.json()
 }
 
 export async function getResult(id: string): Promise<Report> {
-  const res = await fetch(`/api/jobs/${id}/result`)
+  const res = await fetch(`/api/jobs/${id}/result`, { signal: AbortSignal.timeout(15000) })
   if (!res.ok) throw new Error(`result failed (${res.status})`)
   return res.json()
 }

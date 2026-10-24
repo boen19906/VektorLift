@@ -22,13 +22,15 @@ from scipy.signal import savgol_filter
 
 from .pose import RawPoseSeries, LANDMARK_INDEX
 
-# Landmarks that must be tracked for analysis to be meaningful.
-KEY_LANDMARKS = ("shoulder", "hip", "knee", "ankle", "heel", "foot_index", "wrist")
+# Landmarks that must be tracked for analysis to be meaningful. MediaPipe
+# visibility scores on real gym footage sit ~0.3-0.6 even when tracking is
+# good, so the gates below are deliberately forgiving.
+KEY_LANDMARKS = ("shoulder", "hip", "knee", "ankle", "heel", "foot_index")
 
 EYE_HEIGHT_FRACTION = 0.936  # standing eye height as a fraction of stature
 ANKLE_HEIGHT_FRACTION = 0.039  # ankle joint height above floor, frac of stature
 MAX_GAP_S = 0.35  # interpolate tracking gaps up to this long
-MIN_KEY_VIS = 0.5
+MIN_KEY_VIS = 0.4
 
 
 class CalibrationError(Exception):
@@ -142,7 +144,7 @@ class Preprocessor:
                 ]
             )
 
-        key_vis = np.min(
+        key_vis = np.mean(
             np.stack([vis[nm] for nm in KEY_LANDMARKS]), axis=0
         )
         quality_ok = key_vis >= self.min_vis

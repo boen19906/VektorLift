@@ -58,6 +58,7 @@ def run_analysis(
         sex=meta.get("sex", "male"),
     )
     kin = compute_kinematics(pre, bar.pos, lift_type)
+    kin.bar_method = bar.method
     if not kin.reps:
         raise AnalysisError(
             f"No {lift_type} reps detected. Check that the clip shows a full "

@@ -39,6 +39,7 @@ class KinematicsResult:
     standing_hip_y: float
     bar_pos: np.ndarray        # (N,2) bar position used downstream
     floor_bar_y: float         # deadlift: bar height at rest on floor
+    bar_method: str = "proxy"  # 'plate' | 'proxy' (set by run.py)
     events: dict = field(default_factory=dict)
 
 
@@ -107,7 +108,7 @@ def _filter_implausible_reps(kin: KinematicsResult, pre) -> None:
     for rep in kin.reps:
         m = rep.metrics
         vis = float(np.mean(pre.key_visibility[rep.start : rep.end + 1]))
-        if vis < 0.40:
+        if vis < 0.22:
             continue
         if kin.lift_type == "squat":
             if m.get("max_knee_flexion", 0) < 40:
@@ -201,6 +202,12 @@ def _rep_metrics(kin: KinematicsResult, pre) -> None:
     for rep in kin.reps:
         m = rep.metrics
         s, b, lo, e = rep.start, rep.bottom, rep.lockout, rep.end
+        # physiological sanity: values past these bounds are landmark noise,
+        # not human joints — surfaced as 'tracking_suspect' in the report
+        m["tracking_suspect"] = bool(
+            np.nanmax(np.abs(A["knee_flexion"][s : e + 1])) > 160
+            or np.nanmax(np.abs(A["trunk_inclination"][s : e + 1])) > 85
+        )
         m["duration_s"] = float(t[e] - t[s])
         m["t_start"], m["t_bottom"], m["t_lockout"], m["t_end"] = (
             float(t[s]), float(t[b]), float(t[lo]), float(t[e]),
@@ -223,10 +230,14 @@ def _rep_metrics(kin: KinematicsResult, pre) -> None:
             )
             hip_y_dwell = P["hip"][dwell, 1]
             bottom_local = int(np.argmin(hip_y_dwell))
-            m["buttwink_deg"] = float(
-                A["hip_flexion"][dwell][-1]
-                - A["hip_flexion"][dwell][bottom_local]
-            ) if dwell.stop - dwell.start > 2 else 0.0
+            bw = (
+                float(
+                    A["hip_flexion"][dwell][-1]
+                    - A["hip_flexion"][dwell][bottom_local]
+                )
+                if dwell.stop - dwell.start > 2 else 0.0
+            )
+            m["buttwink_deg"] = float(np.clip(bw, -15.0, 30.0))
             # good-morning: early concentric hip rise outpacing bar rise
             win = slice(b, min(lo + 1, b + int(0.4 * fps)))
             if win.stop - win.start > 2:

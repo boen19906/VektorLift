@@ -46,6 +46,8 @@ def _ctx(kin, dyn, fat, anthro, pre):
         "kin": kin, "dyn": dyn, "fat": fat, "anthro": anthro, "pre": pre,
         "reps": kin.reps,
         "foot_len": anthro.lengths.get("foot", 0.28),
+        # 'plate' => true bar track; 'proxy' => shoulder/wrist stand-in.
+        "bar_method": getattr(kin, "bar_method", "proxy"),
     }
 
 
@@ -153,20 +155,25 @@ def r_heel_lift(c):
 
 
 def r_bar_drift_squat(c):
-    hit = _worst(c["reps"], "bar_drift_max")
+    # horizontal excursion of the bar during the rep — a good squat bar path
+    # is nearly vertical. Requires a real plate track: the shoulder proxy is
+    # not the bar (the torso leans, translating the shoulder ~0.3-0.5 m).
+    if c["bar_method"] != "plate":
+        return []
+    hit = _worst(c["reps"], "bar_path_range_x")
     if not hit:
         return []
     v, rep = hit
-    if v > 0.6 * c["foot_len"]:
+    if v > 0.12:
         return [Finding(
-            "bar_drift", "squat", 2, "Bar drifts off midfoot",
-            f"bar traveled {v:.2f} m from the midfoot line "
+            "bar_drift", "squat", 2, "Bar path is not vertical",
+            f"bar wandered {v:.2f} m horizontally during the rep "
             f"(rep {rep.index}) — wasted horizontal work and balance stress",
             "Keep the bar stacked over the middle of your foot the whole "
             "rep; if it drifts forward on the way up, sit BACK more on "
             "the descent.",
             "Film check: draw a vertical line at midfoot; wall-facing "
-            "squats to grooving a vertical bar path.",
+            "squats to groove a vertical bar path.",
             [rep.index], rep.metrics.get("t_bottom", 0.0),
         )]
     return []

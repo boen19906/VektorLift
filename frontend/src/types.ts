@@ -31,6 +31,7 @@ export interface Finding {
   evidence: string
   cue: string
   drill: string
+  body_part: string
   reps: number[]
   timestamp: number
 }

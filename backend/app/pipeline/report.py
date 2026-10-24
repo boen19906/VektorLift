@@ -97,6 +97,7 @@ def build_report(
             {
                 "rule": f.rule, "severity": f.severity, "title": f.title,
                 "evidence": f.evidence, "cue": f.cue, "drill": f.drill,
+                "body_part": f.body_part,
                 "reps": f.reps, "timestamp": round(f.timestamp, 2),
             }
             for f in findings

@@ -128,9 +128,9 @@ export default function App() {
     <div className="min-h-screen px-4 py-10">
       <header className="mx-auto mb-8 max-w-6xl">
         <h1 className="text-3xl font-bold tracking-tight">
-          Vektor<span className="text-emerald-400">Lift</span>
+          Vektor<span className="text-orange-500">Lift</span>
         </h1>
-        <p className="mt-1 text-sm text-neutral-400">
+        <p className="mt-1 text-sm text-neutral-500">
           Bar-path kinematics · anthropometric-normalized form checks ·
           velocity-based fatigue · inverse-statics joint torques
         </p>
@@ -145,22 +145,22 @@ export default function App() {
       {stage.kind === 'uploading' && <UploadForm onSubmit={submit} busy />}
 
       {stage.kind === 'processing' && (
-        <div className="mx-auto max-w-xl rounded-2xl border border-neutral-800 bg-neutral-900 p-8 text-center">
+        <div className="mx-auto max-w-xl rounded-2xl border border-neutral-200 bg-white p-8 text-center">
           <div className="mb-3 text-lg font-semibold">Analyzing your lift…</div>
-          <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
+          <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
             <div
-              className="h-full rounded-full bg-emerald-500 transition-all"
+              className="h-full rounded-full bg-orange-500 transition-all"
               style={{ width: `${Math.round(stage.progress * 100)}%` }}
             />
           </div>
           <div className="mt-2 text-xs text-neutral-500">
             pose tracking → calibration → inverse statics → rendering
           </div>
-          <div className="mt-1 text-sm text-neutral-400">
+          <div className="mt-1 text-sm text-neutral-500">
             {Math.round(stage.progress * 100)}%
           </div>
           {connLost && (
-            <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/50 px-3 py-2 text-xs text-amber-300">
+            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
               Lost connection to the analysis server — still retrying in the
               background. If this persists, check that the backend is running
               on :8000 and refresh.
@@ -170,12 +170,12 @@ export default function App() {
       )}
 
       {stage.kind === 'error' && (
-        <div className="mx-auto max-w-xl rounded-2xl border border-red-900 bg-red-950/50 p-8">
-          <div className="mb-2 text-lg font-semibold text-red-300">Analysis failed</div>
-          <p className="text-sm text-red-200/80">{stage.message}</p>
+        <div className="mx-auto max-w-xl rounded-2xl border border-red-300 bg-red-50 p-8">
+          <div className="mb-2 text-lg font-semibold text-red-700">Analysis failed</div>
+          <p className="text-sm text-red-600">{stage.message}</p>
           <button
             onClick={reset}
-            className="mt-4 rounded-lg border border-neutral-700 px-4 py-2 text-sm hover:bg-neutral-800"
+            className="mt-4 rounded-lg border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-100"
           >
             Try another video
           </button>
@@ -188,7 +188,7 @@ export default function App() {
           <div className="mx-auto mt-8 max-w-6xl">
             <button
               onClick={reset}
-              className="rounded-lg border border-neutral-700 px-4 py-2 text-sm hover:bg-neutral-800"
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-100"
             >
               Analyze another video
             </button>
@@ -220,9 +220,9 @@ function RecentJobs({ onOpen }: { onOpen: (jobId: string) => void }) {
           <button
             key={j.id}
             onClick={() => onOpen(j.id)}
-            className="flex w-full items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-2.5 text-left text-sm hover:border-emerald-700"
+            className="flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-left text-sm hover:border-orange-400"
           >
-            <span className="truncate text-neutral-300">
+            <span className="truncate text-neutral-700">
               {j.filename ?? j.id}
             </span>
             <span className="ml-3 shrink-0 text-xs text-neutral-500">

@@ -26,6 +26,7 @@ class Finding:
     drill: str               # how to train the fix
     reps: list = field(default_factory=list)
     timestamp: float = 0.0   # representative time (s) into the video
+    body_part: str = ""      # anatomy at risk (e.g. 'lumbar spine')
 
 
 # ---------------------------------------------------------------------------
@@ -349,6 +350,24 @@ DEADLIFT_RULES = [
     r_dl_hitch, r_dl_leanback, r_fatigue,
 ]
 
+# anatomy stressed by each fault — shown as a tag on the finding card
+BODY_PARTS = {
+    "squat_depth": "knees / ankles",
+    "buttwink": "lumbar spine",
+    "good_morning": "lumbar spine",
+    "squat_lean": "thoracic / lumbar spine",
+    "heel_lift": "ankles / knees",
+    "bar_drift": "lumbar spine",
+    "hip_dominant": "glutes / lower back",
+    "knee_dominant": "knees",
+    "dl_hips_shoot": "lumbar spine",
+    "dl_back_angle": "lumbar spine",
+    "dl_bar_drift": "lumbar spine",
+    "dl_hitch": "lumbar spine",
+    "dl_leanback": "lumbar spine",
+    "vbt_fatigue": "whole system",
+}
+
 
 def evaluate_rules(kin, dyn, fat, anthro, pre) -> list:
     ctx = _ctx(kin, dyn, fat, anthro, pre)
@@ -359,5 +378,18 @@ def evaluate_rules(kin, dyn, fat, anthro, pre) -> list:
             findings.extend(rule(ctx))
         except Exception:
             continue  # a broken rule must never kill the analysis
-    findings.sort(key=lambda f: -f.severity)
+
+    # merge duplicate findings from the same rule across reps into one card
+    merged: dict = {}
+    for f in findings:
+        f.body_part = BODY_PARTS.get(f.rule, "")
+        m = merged.get(f.rule)
+        if m is None:
+            merged[f.rule] = f
+        else:
+            m.reps = sorted(set(m.reps) | set(f.reps))
+            m.severity = max(m.severity, f.severity)
+            if f.timestamp and (not m.timestamp or f.timestamp < m.timestamp):
+                m.timestamp = f.timestamp
+    findings = sorted(merged.values(), key=lambda f: -f.severity)
     return findings

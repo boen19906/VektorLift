@@ -73,6 +73,11 @@ async def analyze(
     return {"job_id": job_id}
 
 
+@app.get("/api/jobs")
+def jobs_list():
+    return jobs.list_jobs()
+
+
 @app.get("/api/jobs/{job_id}")
 def job_status(job_id: str):
     state = jobs.get_job(job_id)

@@ -9,6 +9,23 @@ export async function analyzeVideo(file: File, meta: AnalyzeMeta): Promise<strin
   return (await res.json()).job_id
 }
 
+export interface JobSummary {
+  id: string
+  status: string
+  progress: number
+  error: string | null
+  created_at: number
+  filename: string | null
+  lift_type: string | null
+  has_result: boolean
+}
+
+export async function getJobs(): Promise<JobSummary[]> {
+  const res = await fetch('/api/jobs')
+  if (!res.ok) throw new Error(`jobs list failed (${res.status})`)
+  return res.json()
+}
+
 export async function getJob(id: string): Promise<JobStatus> {
   const res = await fetch(`/api/jobs/${id}`)
   if (!res.ok) throw new Error(`status failed (${res.status})`)

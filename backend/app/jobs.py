@@ -81,6 +81,31 @@ def save_upload(job_id: str, filename: str, data: bytes) -> str:
     return path
 
 
+def list_jobs(limit: int = 20) -> list:
+    """Recent jobs, newest first."""
+    import glob
+
+    out = []
+    for p in glob.glob(os.path.join(BASE_DIR, "*", "job.json")):
+        try:
+            with open(p) as f:
+                j = json.load(f)
+            out.append({
+                "id": j["id"], "status": j["status"],
+                "progress": j["progress"], "error": j.get("error"),
+                "created_at": j["created_at"],
+                "filename": j["meta"].get("filename"),
+                "lift_type": j["meta"].get("lift_type"),
+                "has_result": os.path.exists(
+                    os.path.join(os.path.dirname(p), "report.json")
+                ),
+            })
+        except Exception:
+            continue
+    out.sort(key=lambda x: -x["created_at"])
+    return out[:limit]
+
+
 def sweep_stale_jobs() -> int:
     """Mark jobs left in queued/running as errored.
 

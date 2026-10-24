@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import UploadForm from './UploadForm'
 import Report from './Report'
-import { analyzeVideo, getJob, getResult } from './api'
+import { analyzeVideo, getJob, getResult, getJobs } from './api'
+import type { JobSummary } from './api'
 import type { AnalyzeMeta, Report as ReportT } from './types'
 
 type Stage =
@@ -104,6 +105,25 @@ export default function App() {
     setStage({ kind: 'idle' })
   }
 
+  async function openJob(jobId: string) {
+    try {
+      const j = await getJob(jobId)
+      if (j.status === 'done') {
+        const report = await getResult(jobId)
+        localStorage.setItem(LAST_JOB_KEY, jobId)
+        setStage({ kind: 'done', jobId, report })
+      } else if (j.status === 'error') {
+        setStage({ kind: 'error', message: j.error ?? 'analysis failed' })
+      } else {
+        localStorage.setItem(LAST_JOB_KEY, jobId)
+        setStage({ kind: 'processing', jobId, progress: j.progress })
+        startPolling(jobId)
+      }
+    } catch (e) {
+      setStage({ kind: 'error', message: e instanceof Error ? e.message : 'could not open job' })
+    }
+  }
+
   return (
     <div className="min-h-screen px-4 py-10">
       <header className="mx-auto mb-8 max-w-6xl">
@@ -116,7 +136,12 @@ export default function App() {
         </p>
       </header>
 
-      {stage.kind === 'idle' && <UploadForm onSubmit={submit} busy={false} />}
+      {stage.kind === 'idle' && (
+        <>
+          <UploadForm onSubmit={submit} busy={false} />
+          <RecentJobs onOpen={openJob} />
+        </>
+      )}
       {stage.kind === 'uploading' && <UploadForm onSubmit={submit} busy />}
 
       {stage.kind === 'processing' && (
@@ -170,6 +195,42 @@ export default function App() {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+function RecentJobs({ onOpen }: { onOpen: (jobId: string) => void }) {
+  const [jobs, setJobs] = useState<JobSummary[]>([])
+
+  useEffect(() => {
+    getJobs()
+      .then(js => setJobs(js.filter(j => j.has_result)))
+      .catch(() => {})
+  }, [])
+
+  if (!jobs.length) return null
+
+  return (
+    <div className="mx-auto mt-6 max-w-xl">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Recent analyses
+      </h3>
+      <div className="space-y-1">
+        {jobs.slice(0, 6).map(j => (
+          <button
+            key={j.id}
+            onClick={() => onOpen(j.id)}
+            className="flex w-full items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-2.5 text-left text-sm hover:border-emerald-700"
+          >
+            <span className="truncate text-neutral-300">
+              {j.filename ?? j.id}
+            </span>
+            <span className="ml-3 shrink-0 text-xs text-neutral-500">
+              {j.lift_type} · {new Date(j.created_at * 1000).toLocaleTimeString()}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

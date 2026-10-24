@@ -81,6 +81,30 @@ def save_upload(job_id: str, filename: str, data: bytes) -> str:
     return path
 
 
+def sweep_stale_jobs() -> int:
+    """Mark jobs left in queued/running as errored.
+
+    Workers are in-process, so on a fresh boot nothing is actually running —
+    a non-terminal job state means the server restarted mid-analysis and the
+    frontend would otherwise poll forever.
+    """
+    import glob
+
+    n = 0
+    for p in glob.glob(os.path.join(BASE_DIR, "*", "job.json")):
+        try:
+            with open(p) as f:
+                state = json.load(f)
+            if state.get("status") in ("queued", "running"):
+                state["status"] = "error"
+                state["error"] = "server restarted during analysis — resubmit"
+                _write_state(state["id"], state)
+                n += 1
+        except Exception:
+            continue
+    return n
+
+
 def start_analysis(job_id: str, video_path: str) -> None:
     from .pipeline.run import run_analysis  # deferred: heavy imports
 

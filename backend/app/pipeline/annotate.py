@@ -90,6 +90,7 @@ def render_annotated(
     step = max(1, int(round(fps / 30.0)))
     frame_i = 0
     written = 0
+    last_cb = 0
     try:
         while True:
             ok, frame = cap.read()
@@ -174,8 +175,9 @@ def render_annotated(
                     )
                 writer.send(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 written += 1
-                if progress_cb:
+                if progress_cb and frame_i - last_cb >= 15:
                     progress_cb(0.6 + 0.35 * frame_i / max(total, 1))
+                    last_cb = frame_i
             frame_i += 1
     finally:
         cap.release()

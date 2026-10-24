@@ -65,8 +65,14 @@ def render_annotated(
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or pre.n_frames
 
+    # cap annotated output at 720p — x264 encode time scales with pixels
+    out_scale = min(1.0, 720.0 / max(w, h))
+    ow, oh = int(w * out_scale), int(h * out_scale)
+    ow -= ow % 2
+    oh -= oh % 2
+
     writer = imageio_ffmpeg.write_frames(
-        out_path, (w, h), fps=min(fps, 30.0), codec="libx264",
+        out_path, (ow, oh), fps=min(fps, 30.0), codec="libx264",
         output_params=["-pix_fmt", "yuv420p", "-crf", "23"],
         macro_block_size=16,
     )
@@ -162,6 +168,10 @@ def render_annotated(
                     cv2.putText(frame, f"! {txt}", (16, h - 20 - 26 * k),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_WARN, 2)
 
+                if out_scale < 1.0:
+                    frame = cv2.resize(
+                        frame, (ow, oh), interpolation=cv2.INTER_AREA
+                    )
                 writer.send(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 written += 1
                 if progress_cb:

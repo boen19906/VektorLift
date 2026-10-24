@@ -129,15 +129,28 @@ def extract_landmarks(
         output_segmentation_masks=False,
     )
 
+    # downscale oversized frames before inference: the model input is a
+    # fixed ~256x256 tile either way, so big frames only cost decode+convert
+    # time. Landmarks are normalized so coordinates are unaffected.
+    proc_scale = 1.0
+    if max(width, height) > 1280:
+        proc_scale = 1280.0 / max(width, height)
+
     xs, ys, vis, idxs = [], [], [], []
     ever_detected = False
     frame_i = 0
+    last_cb = 0.0
     with mp_vision.PoseLandmarker.create_from_options(options) as landmarker:
         while True:
             ok, frame = cap.read()
             if not ok:
                 break
             ts_ms = int(frame_i * 1000.0 / fps)
+            if proc_scale < 1.0:
+                frame = cv2.resize(
+                    frame, None, fx=proc_scale, fy=proc_scale,
+                    interpolation=cv2.INTER_AREA,
+                )
             mp_image = mp.Image(
                 image_format=mp.ImageFormat.SRGB,
                 data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
@@ -154,8 +167,9 @@ def extract_landmarks(
                 ys.append([np.nan] * 33)
                 vis.append([0.0] * 33)
             idxs.append(frame_i)
-            if progress_cb and total:
+            if progress_cb and total and frame_i - last_cb >= 15:
                 progress_cb(0.05 + 0.55 * frame_i / max(total, 1))
+                last_cb = frame_i
             frame_i += 1
     cap.release()
 

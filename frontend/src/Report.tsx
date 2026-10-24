@@ -99,9 +99,15 @@ export default function Report({ jobId, report }: { jobId: string; report: Repor
         )}
       </div>
 
-      {/* annotated video */}
+      {/* annotated video — capped height so portrait phone clips don't
+          dominate the page; centered with letterbox padding */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm">
-        <video src={videoUrl(jobId)} controls loop muted className="w-full rounded-xl bg-black" />
+        <div className="flex justify-center rounded-xl bg-neutral-900">
+          <video
+            src={videoUrl(jobId)} controls loop muted
+            className="max-h-[400px] w-auto max-w-full rounded-xl"
+          />
+        </div>
       </div>
 
       {/* injury risks */}

@@ -1,0 +1,10 @@
+fastapi>=0.141
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+mediapipe==1.1.1
+opencv-python>=4.10
+numpy>=2.1
+scipy>=1.14
+imageio-ffmpeg>=0.5
+pydantic>=2.7
+pytest>=8.0

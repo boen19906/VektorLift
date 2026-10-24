@@ -130,19 +130,45 @@ def sweep_stale_jobs() -> int:
     return n
 
 
+_CANCELLED = set()
+
+
+class CancelledError(Exception):
+    """Raised inside run_analysis when the user cancels a job."""
+
+
+def cancel_job(job_id: str) -> bool:
+    """Flag a job for cancellation; the worker checks at each progress tick."""
+    if get_job(job_id) is None:
+        return False
+    with _lock:
+        _CANCELLED.add(job_id)
+    return True
+
+
 def start_analysis(job_id: str, video_path: str) -> None:
     from .pipeline.run import run_analysis  # deferred: heavy imports
 
     def work():
-        update_job(job_id, status="running")
         try:
+            with _lock:
+                _CANCELLED.discard(job_id)  # fresh start, clear stale flag
+            update_job(job_id, status="running")
+
+            def cb(p):
+                if job_id in _CANCELLED:
+                    raise CancelledError()
+                update_job(job_id, progress=round(p, 3))
+
             run_analysis(
                 video_path,
                 _job_dir(job_id),
                 meta=(get_job(job_id) or {}).get("meta", {}),
-                progress_cb=lambda p: update_job(job_id, progress=round(p, 3)),
+                progress_cb=cb,
             )
             update_job(job_id, status="done", progress=1.0)
+        except CancelledError:
+            update_job(job_id, status="error", error="cancelled by user")
         except Exception as exc:  # noqa: BLE001 - surface to client
             update_job(job_id, status="error", error=str(exc))
 

@@ -78,6 +78,13 @@ def jobs_list():
     return jobs.list_jobs()
 
 
+@app.post("/api/jobs/{job_id}/cancel")
+def job_cancel(job_id: str):
+    if not jobs.cancel_job(job_id):
+        raise HTTPException(404, "job not found")
+    return {"ok": True}
+
+
 @app.get("/api/jobs/{job_id}")
 def job_status(job_id: str):
     state = jobs.get_job(job_id)

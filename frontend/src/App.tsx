@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import UploadForm from './UploadForm'
 import Report from './Report'
-import { analyzeVideo, getJob, getResult, getJobs } from './api'
+import { analyzeVideo, getJob, getResult, getJobs, cancelJob } from './api'
 import type { JobSummary } from './api'
 import type { AnalyzeMeta, Report as ReportT } from './types'
 
@@ -168,6 +168,19 @@ export default function App() {
               on :8000 and refresh.
             </div>
           )}
+          <button
+            onClick={async () => {
+              try { await cancelJob(stage.jobId) } catch { /* best effort */ }
+              reset()
+            }}
+            className="mt-5 rounded-lg border border-neutral-300 px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100"
+          >
+            Cancel analysis
+          </button>
+          <p className="mt-3 text-[11px] text-neutral-400">
+            or click the logo to head home and keep it running — finished
+            reports appear under Recent analyses.
+          </p>
         </div>
       )}
 

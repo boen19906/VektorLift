@@ -38,6 +38,10 @@ export async function getResult(id: string): Promise<Report> {
   return res.json()
 }
 
+export async function cancelJob(id: string): Promise<void> {
+  await fetch(`/api/jobs/${id}/cancel`, { method: 'POST' })
+}
+
 export function videoUrl(id: string): string {
   return `/api/jobs/${id}/video`
 }

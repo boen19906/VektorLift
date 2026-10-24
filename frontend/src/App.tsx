@@ -15,6 +15,7 @@ const LAST_JOB_KEY = 'vektorlift:lastJob'
 
 export default function App() {
   const [stage, setStage] = useState<Stage>({ kind: 'idle' })
+  const [connLost, setConnLost] = useState(false)
   const poll = useRef<number | null>(null)
 
   useEffect(() => () => { if (poll.current) window.clearInterval(poll.current) }, [])
@@ -25,9 +26,21 @@ export default function App() {
     if (!jobId) return
     let cancelled = false
     ;(async () => {
+      // retry briefly — a transient failure shouldn't lose a running job
+      let j = null
+      for (let i = 0; i < 4 && !j; i++) {
+        try {
+          j = await getJob(jobId)
+        } catch {
+          await new Promise(r => setTimeout(r, 1500))
+        }
+      }
+      if (cancelled) return
+      if (!j) {
+        localStorage.removeItem(LAST_JOB_KEY)
+        return
+      }
       try {
-        const j = await getJob(jobId)
-        if (cancelled) return
         if (j.status === 'done') {
           const report = await getResult(jobId)
           if (!cancelled) setStage({ kind: 'done', jobId, report })
@@ -47,9 +60,12 @@ export default function App() {
 
   function startPolling(jobId: string) {
     if (poll.current) window.clearInterval(poll.current)
+    let consecutiveFails = 0
     poll.current = window.setInterval(async () => {
       try {
         const j = await getJob(jobId)
+        consecutiveFails = 0
+        setConnLost(false)
         if (j.status === 'done') {
           const report = await getResult(jobId)
           if (poll.current) window.clearInterval(poll.current)
@@ -62,7 +78,10 @@ export default function App() {
           setStage({ kind: 'processing', jobId, progress: j.progress })
         }
       } catch {
-        /* transient poll errors are fine */
+        consecutiveFails += 1
+        // surface a lost connection instead of silently freezing; the
+        // poll keeps running and self-heals when the server is back
+        if (consecutiveFails >= 10) setConnLost(true)
       }
     }, 800)
   }
@@ -115,6 +134,13 @@ export default function App() {
           <div className="mt-1 text-sm text-neutral-400">
             {Math.round(stage.progress * 100)}%
           </div>
+          {connLost && (
+            <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/50 px-3 py-2 text-xs text-amber-300">
+              Lost connection to the analysis server — still retrying in the
+              background. If this persists, check that the backend is running
+              on :8000 and refresh.
+            </div>
+          )}
         </div>
       )}
 
